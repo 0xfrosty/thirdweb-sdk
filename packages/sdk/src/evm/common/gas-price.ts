@@ -52,6 +52,8 @@ export async function getDynamicFeeData(
     provider.send("eth_maxPriorityFeePerGas", []).catch(() => null),
   ]);
 
+  console.log(`Chain: ${chainId}`)
+
   const baseBlockFee =
     block && block.baseFeePerGas
       ? block.baseFeePerGas
@@ -59,15 +61,19 @@ export async function getDynamicFeeData(
 
   // flag-chain overrides
   if (chainId === Flag.chainId || chainId === FlagTestnet.chainId) {
+    console.log('Not Polygon: No support of EIP-1559')
     // chains does not support eip-1559, return null for all
     return { maxFeePerGas: null, maxPriorityFeePerGas: null, baseFee: null };
   } else if (chainId === Mumbai.chainId || chainId === Polygon.chainId) {
+    console.log('Polygon!')
     // for polygon, get fee data from gas station
     maxPriorityFeePerGas = await getPolygonGasPriorityFee(chainId);
   } else if (eth_maxPriorityFeePerGas) {
+    console.log('Not Polygon: taking EIP-1559 fees from RPC call')
     // prioritize fee from eth_maxPriorityFeePerGas
     maxPriorityFeePerGas = BigNumber.from(eth_maxPriorityFeePerGas);
   } else {
+    console.log('Not Polygon: default 1.5 Gwei EIP-1559 fees')
     // if eth_maxPriorityFeePerGas is not available, use 1.5 gwei default
     const feeData = await provider.getFeeData();
     maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
@@ -189,6 +195,7 @@ export async function getPolygonGasPriorityFee(
     }
   } catch {
     // if the gas station is down, return the default gas fee
+    console.log('gas station is down, , return the default gas fee')
   }
   return getDefaultGasFee(chainId);
 }
